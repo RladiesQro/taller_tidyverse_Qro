@@ -1,7 +1,7 @@
 ---
 title: "tidyverse and ggplot2"
-date: xx Nov 2019
-author: Elizabeth Valles, Mike Jeziorski
+date: 21 Nov 2019
+author: Elizabeth Valles, Karen Nuñez, Mike Jeziorski
 output: 
       html_document:
          toc: TRUE
@@ -11,10 +11,11 @@ output:
 
 ```{r setup, include=FALSE}
 library(tidyverse)
-knitr::opts_chunk$set(echo = FALSE)
+# the following sets global options
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center", message = FALSE, warning = FALSE)
 ```
 ```{r, echo=FALSE}
-htmltools::img(src = knitr::image_uri("images/RLadiesQro logo.png"), 
+htmltools::img(src = knitr::image_uri("RLadiesQro logo.png"), 
                alt = 'logo', 
                style = 'position:absolute; top:0; right:0; padding:10px;')
 ```
@@ -24,30 +25,46 @@ htmltools::img(src = knitr::image_uri("images/RLadiesQro logo.png"),
 # The benefits of learning R and the tidyverse  
 This is my friend Colin, who started learning R about the same time I did, but to analyze baseball data.  In 2013 he was hired by the worst team in major league baseball as a data analyst.  Here he is four years later, posing with the World Series trophy and showing the ring given to him by the team:    
 
-![](images/Colin trophy.png) 
-![](images/Colin ring.png) 
+<center>
+![](Colin trophy.png)  
+
+![](Colin ring.png) 
+</center>
 
 The data are clear (n = 1): learning R and the tidyverse will make you rich and famous*.
 
 *Colin is neither rich nor famous.  He is, however, very employable.
 
 ***
-### Why are data scientists in demand?  Because data can be difficult to analyze:  
-
-From Steph de Silva, Rex Analytics:  
-[A guide for understanding your data](rex-analytics.com/data-analysis-questions-to-ask-the-first-time/)
-
-![](images/career-timeline-2.jpg)
-
-***
-### Not knowing your data can be dangerous  
+### Why are data scientists in demand?  Because data can be difficult to analyze  
 
 Why don't we just use Excel for everything?  This is one reason:  
 
-![](images/gene errors.png)
+<center>
+![](gene errors.png)
+</center>
+
+From **Steph de Silva**, Rex Analytics:  
+[A guide for understanding your data](rex-analytics.com/data-analysis-questions-to-ask-the-first-time/)
+
+<center>
+![](career-timeline-2.jpg)
+</center>
+***
+
+From **Sharla Gelfand**, co-organizer of R-Ladies-Toronto:  
+[An example of using the tidyverse on real-world data](https://uoft-brown-bag-data-cleaning.netlify.com/#1)
+
+Slide 3:  
+
+"Some questions to ask yourself...  
+- What do I want my data to look like when I go to use it?  
+- What does it look like now?  
+- How do I get there?  
+- How can I be as lazy as possible?"  
 
 ***
-# The tidyverse
+# The tidyverse  <img style="float: right;" src="tidyverse-200x231.png">
 ### The principles of tidy data
 
 - The tidyverse works primarily with data frames
@@ -66,7 +83,7 @@ Why don't we just use Excel for everything?  This is one reason:
 - Pipes allow the format `data %>% function1(option) %>% function2(option) %>%` ...
 - By using pipes, the data can go through several operations without creating intermediate objects
 
-## The tidyverse package suite  <img style="float: right;" src="images/tidyverse-200x231.png">
+## The tidyverse package suite
 * readr - to read in two-dimensional data  
 * tidyr - for data organization  
 * dplyr - for data manipulation  
@@ -76,7 +93,7 @@ Why don't we just use Excel for everything?  This is one reason:
 * several other packages that integrate well with the above
 
 We will work with dplyr commands to manipulate data and ggplot2 to visualize it.  We can load each package separately, but loading the tidyverse is easier.
-```{r eval=FALSE, message = FALSE}
+```{r eval=FALSE, message=FALSE}
 # use install.packages("tidyverse") if you have not loaded the tidyverse before
 library(tidyverse)
 ```
@@ -91,7 +108,50 @@ library(tidyverse)
 * `group_by` - group data based on a variable; often used with summarize
 
 ***
-# An example of non-tidy data  
+# Two examples of non-tidy data  
+
+#### Example 1
+
+On `#rstats` Twitter, users can post their questions.  One that I encountered asked how to work with the following dataframe in which a series of questions (Q) were evaluated by individual raters:  
+
+```{r echo=TRUE}
+data <- data.frame("id" = c("Q1", "Q2", "Q3", "age", "gender", "language"),
+                   "rater1" = c(7, 6, 9, 21, 1, 1),
+                   "rater2" = c(8, 9, 10, 32, 2, 2),
+                   "rater3" = c(10, 6, 8, 38, 2, 1))
+data
+```
+
+What is wrong with how these data are arranged?  
+
+Answers:  
+- "age", "gender", "language" are variables and should be in columns  
+- "gender" and "language" are coded as numeric data, but are really factors disguised as numbers  
+- the data will be easier to analyze if they are transposed so that rows become columns and vice versa  
+
+```{r echo=TRUE, warning=FALSE}
+new_data <- data %>%                                     # first identify the data
+   select(-id) %>%                                       # select all columns except "id"
+   t() %>%                                               # transpose (creates a matrix)
+   as_tibble(rownames = "rater")                         # change to tibble and convert rownames
+colnames(new_data) <- c("rater", as.character(data$id))  # change column names
+new_data                                                 # look at the new dataframe
+```
+
+The data can now be further tidied so that "question" becomes a variable:  
+
+```{r echo=TRUE}
+tidy_data <- new_data %>%
+   gather(Q1:Q3, key = "question", value = "rating") %>%    # gather 3 columns into 2
+   select(rater, question, rating, age, gender, language)   # reorder the columns
+tidy_data
+```
+
+Tidy data may appear strange at first, because certain variables (e.g. age) seem to be unnecessarily repeated.  However, this "long data" format allows us to use tidyverse commands to pull out information quickly.  
+
+#### Example 2
+
+To see how a larger, disorganized dataset can be cleaned up using the tidyverse, let's look at another example.  
 
 We can see available datasets loaded with R by typing `data()`.  Most of the datasets that load with base R are reasonably organized, but `tidyverse` comes preloaded with messy datasets that have problems similar to those found in most raw data.  
 
@@ -119,14 +179,14 @@ billboard %>%
 ```
 Note how "long" this dataframe is now: 24,092 observations of 5 variables!  But it already makes more sense.  
 
-The quick analysis shows us that "week" is not week of the year, but number of weeks on the chart.  The "date.entered" column tells us when the song first appeared on the chart, but we do not yet have a variable that tells us the chart position for a specific week.  To make the data tidy, we want to do the following:  
+The quick analysis shows us that "week" is not week of the year, but number of weeks on the chart.  The "date.entered" column tells us when the song first appeared on the chart, but we do not yet have a variable that tells us the chart position for a specific week.  Using the guidelines provided in the examples above by Steph de Silva and Sharla Gelfand, let's establish our goals with this dataset:  
 
-- gather the data as we did above, now using "weeks" as the new variable
-- remove the lines that have NA values for rank
-- convert "wk1", "wk2", etc. to a numeric variable
-- calculate a new variable, "date", that is date.entered + (# of weeks - 1) * 7
-- select and reorder the columns
-- sort the table to have the #1 songs at the top arranged by date
+1. gather the data as we did above, now using "weeks" as the new variable
+2. remove the lines that have NA values for rank
+3. convert "wk1", "wk2", etc. to a numeric variable
+4. calculate a new variable, "date", that is date.entered + (# of weeks - 1) * 7
+5. select and reorder the columns
+6. sort the table to have the #1 songs at the top arranged by date  
 
 The tidyverse allows us to do all that using piped functions:  
 
@@ -140,29 +200,10 @@ billboard %>%
    arrange(rank, date)                                               # sort by rank and date
 ```
 
-Note that we have eliminated the `date.entered` variable, but we can easily find out when a song entered the list by using `filter(weeks == 1)` as a piped function.
-
-The tidyverse is constantly being improved.  The new version 1.0.0 of `tidyr` was released in September 2019 and has many new functions.  The `gather()` function has been replaced by `pivot_longer`, which allows us to replace three functions with one:
-
-```{r echo=TRUE}
-billboard %>% 
-   pivot_longer(cols = starts_with("wk"),                            # pivot_longer gathers columns,
-                names_to = "weeks",                                   
-                names_prefix = "wk",                                 # gets rid of "wk" prefix,
-                values_to = "rank",
-                values_drop_na = TRUE) %>%                           # and filters out NAs
-   mutate(weeks = as.numeric(weeks)) %>%                             # convert to numeric
-   mutate(date = date.entered + 7 * (weeks - 1)) %>%                 # create a new variable
-   select(date, rank, artist, track, weeks) %>%                      # reorder the columns
-   arrange(rank, date)                                               # sort by rank and date
-```
-
-However, in this code we will use `gather`, which is documented on the `tidyr` cheat sheet.
+Note that we have eliminated the `date.entered` variable, but we can easily find out when a song entered the list by using `filter(weeks == 1)` as a piped function.  
 
 ***
-We can already see some problems.  The #1 songs for the first two weeks of 2000 are missing.  Did we make an error or is the data missing from the dataset?  We will do some further analysis.
-
-Once we are satisfied that the dataset looks tidy, we can edit the pipeline to save the dataframe as an object (NOT by overwriting the original data):
+Although the data are in a cleaner format, we can see some problems.  The #1 songs for the first two weeks of 2000 are missing.  Did we make an error or is the data missing from the dataset?  We will do some further analysis.  But first, now that we are satisfied that the dataset looks tidy, we can edit the pipeline to save the dataframe as an object (NOT by overwriting the original data):
 
 ```{r echo=TRUE}
 bb_tidy <- billboard %>% 
@@ -311,5 +352,15 @@ capitulos_rladies %>%
       select(capitulo, pais, creacion, miembros) %>%
       arrange(desc(miembros))
 ```
+
+#### What meetings have been attended by Hadley Wickham?  Jenny Bryan?
+
+```{r echo=TRUE}
+rladies_tidy %>%
+      filter(str_detect(titulo_evento, "Wickham")) %>%   # use stringr function
+      select(capitulo, fecha_local, titulo_evento) %>%   # select three columns
+      arrange(fecha_local)                               # sort by date
+```
+
 
 ## Step 5: Give the tidy data to Elizabeth Valles to visualize with ggplot!
