@@ -1,0 +1,35 @@
+---
+title: "Mapa de R-Ladies"
+author: "Michael Jeziorski"
+date: "21 Nov 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(lubridate)
+library(gganimate)
+library(maps)
+library(ggthemes)
+capitulos_rladies <- readr::read_csv("https://raw.githubusercontent.com/cienciadedatos/datos-de-miercoles/master/datos/2019/2019-06-26/capitulos_rladies.csv")
+eventos_rladies <- readr::read_csv("https://raw.githubusercontent.com/cienciadedatos/datos-de-miercoles/master/datos/2019/2019-06-26/eventos_rladies.csv")
+rladies_tidy <- capitulos_rladies %>%
+      left_join(eventos_rladies, by = "capitulo")
+```
+
+```{r message=FALSE, warning=FALSE}
+# reduce to one line per chapter, group by month of creation, then send to ggplot
+map <- rladies_tidy %>%
+      distinct(capitulo, .keep_all = TRUE) %>%
+      mutate(cr_date = floor_date(creacion, unit = "month")) %>%
+      select(1:7, miembros, cr_date) %>%
+      ggplot(aes(x = longitud, y = latitud, size = miembros, group = seq_along(cr_date))) + 
+      borders("world", color = "gray99", fill = "gray97") +
+      geom_point(color = "purple", shape = 16, alpha = 0.5, show.legend = FALSE) +
+      labs(title = "Crecimiento de R-Ladies, 2012-2019") +
+      theme_map()
+map +
+      transition_states(cr_date, state_length = 5) +           # gganimate code
+      transition_reveal(cr_date)                               # gganimate code
+```
