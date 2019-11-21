@@ -1,0 +1,219 @@
+---
+title: "ggplot2"
+author: "Elizabeth Valles"
+date: "21 Nov 2019"
+output:
+  ioslides_presentation: default
+  beamer_presentation: default
+  frontsize: 14pt
+---
+
+##
+![](/home/eli/Desktop/Neurobiologia/R-Ladies/GGplot/r-ladies_qro.png){width=50px} ![](/home/eli/Desktop/Neurobiologia/R-Ladies/GGplot/ggplot_logo.png){width=25px}
+
+```{r setup, include=FALSE}
+rm(list = ls())
+library(tidyverse)
+library(readr)
+library(png)
+```
+
+##Visualización 
+* Es la unión entre estadística y diseño 
+* Es una forma gráfica de análisis de datos 
+* Un buen diseño de visualización debe de ser comprensible y comunicar los resultados 
+
+##Tipos de visualización
+* exploratorios: exploran los datos para confirmar y analizar, son para audiencia especializada 
+* explicativos: informan y persuaden al lector 
+
+##ggoplot2
+* creado en el 2005 por Hadley Wickham
+* es uno de paquetes más elegantes y versátiles de tidyverse 
+* basado en el sistema “The Grammar of Graphics” de Leland Wilkinson
+
+##The Grammar of Graphics
+Las reglas gramaticales de los gráficos en ocasiones son matemáticas y otras estéticas. Las matemática proporcionan herramientas simbólicas para representar abstracciones. La estética, en el sentido griego original, ofrece principios para relacionar los atributos sensoriales (color, forma, sonido, etc.) con las abstracciones (Wilkinson, 2005).
+
+##Elementos gramaticales esenciales
+* datos: la base que será graficada
+* estética: las escalas en las que mapeamos nuestros datos 
+* geometrías: los elementos visuales usados en nuestros datos
+
+##Instalación
+```{r echo=TRUE}
+#install.packages("tidyverse")
+#install.packages("ggplot2")
+#devtools::install_github("tidyverse/ggplot2")
+library(tidyverse)
+library(ggplot2)
+library(plotly)
+```
+
+#Antes de gráficar...
+
+##Datos tidy
+```{r echo=FALSE}
+knitr::include_graphics("/home/eli/Desktop/Neurobiologia/R-Ladies/GGplot/tidy-data.png", dpi = 400)
+```
+
+## Datos a gráficar
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+capitulos_rladies <- readr::read_csv("https://raw.githubusercontent.com/cienciadedatos/datos-de-miercoles/master/datos/2019/2019-06-26/capitulos_rladies.csv")
+glimpse(capitulos_rladies)
+```
+
+##¿Qué tipo de variables tenemos?
+discretas, continuas...
+
+##¿Qué queremos visualizar?
+una, dos variables, más...
+
+#Ahora si, vamos a gráficar...
+
+##Estructura básica 
+ggplot(data,mapping=aes())
+```{r, out.width="650px", out.height="350px"}
+cap <- ggplot(data = capitulos_rladies, mapping = aes(pais, miembros)) 
+cap
+```
+
+##Agregar gráfico
+geom_"gráfico"
+```{r, out.width="650px", out.height="350px"}
+cap +
+  geom_bar(stat = "identity")
+```
+
+##Modificar tamaño de letra
+```{r, out.width="700px", out.height="400px"}
+cap + geom_bar(stat = "identity") +
+  theme(axis.text.x = element_text(size = 5), text = element_text(12)) 
+```
+
+##Color y remover guías
+```{r, out.width="650px", out.height="350px"}
+cap +
+  geom_bar(stat = "identity",aes(fill = capitulo)) +
+  theme(axis.text.x = element_text(size = 5), text = element_text(12)) +
+  guides(fill = FALSE)
+```
+
+##Modificar color
+```{r, out.width="650px", out.height="350px"}
+cap +
+  geom_bar(stat = "identity",aes(fill = capitulo)) +
+  theme(axis.text.x = element_text(size = 5), text = element_text(12)) +
+  guides(fill = FALSE) + scale_fill_hue(l=40, c=60)
+```
+
+##Modificar color 2
+```{r, out.width="650px", out.height="350px"}
+cap +
+  geom_bar(stat = "identity",aes(fill = capitulo)) +
+  theme(axis.text.x = element_text(size = 5), text = element_text(12)) +
+  guides(fill = FALSE) + scale_fill_grey(start = 0.1, end = 0.9)
+```
+
+##Agregar texto
+```{r, out.width="650px", out.height="350px"}
+cap + geom_bar(stat = "identity", aes(fill = capitulo)) +
+  theme(axis.text.x = element_text(size = 5), text = element_text(12)) +
+  guides(fill = FALSE) + scale_fill_hue(l=40, c=60) +
+  ggtitle("Miembros de R-Ladies por país ") + xlab ("país")
+```
+
+##Gráfico dinámico
+```{r, out.width="650px", out.height="350px"}
+bar <- cap + geom_bar(stat = "identity", aes(fill = capitulo)) +
+  theme(axis.text.x = element_text(size = 5), text = element_text(12)) +
+  guides(fill = FALSE) + scale_fill_hue(l=40, c=60) +
+  ggtitle("Miembros de R-Ladies por país ") + xlab ("país")
+ggplotly(bar)
+```
+
+##Otros gráficos..  
+```{r, out.width="450px", out.height="300px"}
+pai <- ggplot(capitulos_rladies, aes(creacion, miembros)) + geom_point(aes(color = capitulo)) +
+  scale_fill_hue(l=20, c=100) + facet_wrap(~pais) +
+  ggtitle("Miembros de R-Ladies por país y capítulo") + xlab ("país") + 
+  ylab ("miembros") + theme(axis.text.x = element_text(5), text = element_text(size = 8)) +
+  guides (color = FALSE)
+```
+
+##
+```{r echo=FALSE}
+ggplotly(pai) 
+```
+
+## 
+```{r, out.width="450px", out.height="300px"}
+yea <- capitulos_rladies %>%
+  separate(creacion, sep=c("-"), into = c("year", "month", "day")) %>% 
+  ggplot(aes(month, miembros)) + 
+  geom_point(aes(color = pais)) +
+  facet_wrap(~year) + 
+  scale_fill_hue(l=20, c=100) +
+  ggtitle("Miembros de R-Ladies por fecha de creación") + 
+  xlab ("país") + 
+  ylab ("miembros") + 
+  theme(axis.text.x = element_text(5), text = element_text(size = 12))
+yea.plotly <- ggplotly(yea)
+```
+
+##
+```{r echo=FALSE}
+yea.plotly
+```
+
+##Guardar gráficos estáticos
+```{r}
+bar <- cap + geom_bar(stat = "identity", aes(fill = capitulo)) +
+  theme(axis.text.x = element_text(size = 5), text = element_text(12)) +
+  guides(fill = FALSE) + scale_fill_hue(l=40, c=60) +
+  ggtitle("Miembros de R-Ladies por país ") + xlab ("país")
+ggsave("bar.png", width = 12, height = 10)
+```
+## Guardar gráficos dinámicos 
+```{r}
+yea <- capitulos_rladies %>%
+  separate(creacion, sep=c("-"), into = c("year", "month", "day")) %>% 
+  ggplot(aes(month, miembros)) + geom_point(aes(color = pais)) +
+  facet_wrap(~year) + scale_fill_hue(l=20, c=100) +
+  ggtitle("Miembros de R-Ladies por país y capítulo") + xlab ("país") + 
+  ylab ("miembros") + theme(axis.text.x = element_text(5), text = element_text(size = 12))
+yea.plotly <-  ggplotly(yea)
+```
+
+##Eventos R-Ladies
+```{r, message=FALSE, warning=FALSE}
+eventos_rladies <- readr::read_csv("https://raw.githubusercontent.com/cienciadedatos/datos-de-miercoles/master/datos/2019/2019-06-26/eventos_rladies.csv")
+glimpse(eventos_rladies)
+```
+
+##Unir los archivos 
+```{r}
+rladies <- full_join(capitulos_rladies, eventos_rladies, by = "capitulo")
+```
+
+```{r, out.width="450px", out.height="300px"}
+latam <- c("MX", "BZ", "GT", "HN", "SV", "NI", "CR", "PA", "CO", "VE", "EC", "BO", "PE", "CL", "AR", "BR", "UY", "PY", "SR", "GY")
+pr <- rladies %>%
+  filter(pais %in% latam) %>%
+  ggplot(aes(fecha_local, respuesta_asistire)) +
+  geom_point(aes(color = pais)) + 
+  geom_line(aes(color = ciudad)) +
+  facet_wrap(~capitulo) + 
+  scale_fill_hue(l=20, c=100) + 
+  guides (color = FALSE) + 
+  ggtitle("Reuniones R-ladies por año") + 
+  xlab ("mes") + 
+  ylab ("asistentes") + 
+  theme(axis.text.x = element_text(3), text = element_text(size = 8))
+```
+
+##
+```{r echo=FALSE}
+ggplotly(pr)
+```
+
